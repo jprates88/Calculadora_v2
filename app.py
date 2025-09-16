@@ -14,6 +14,11 @@ st.write("Faça o upload da planilha com os MeterIds e quantidades para obter um
 # Opção de destino do arquivo
 destino_arquivo = st.radio("📍 Onde deseja gerar o arquivo de saída?", ["Somente para download", "Salvar localmente também"])
 
+# Campo para escolher o caminho local (se aplicável)
+caminho_local = ""
+if destino_arquivo == "Salvar localmente também":
+    caminho_local = st.text_input("📂 Informe o caminho local onde deseja salvar o arquivo (ex: C:/Users/SeuUsuario/Documents)")
+
 uploaded_file = st.file_uploader("📁 Envie um arquivo .xlsx com colunas 'MeterId' e 'Quantity'", type="xlsx")
 
 @st.cache_data(show_spinner=False)
@@ -116,11 +121,14 @@ if uploaded_file:
     df.to_excel(buffer, index=False, engine="openpyxl")
     buffer.seek(0)
 
-    # Salvar localmente se selecionado
+    # Salvar localmente se selecionado e caminho válido
     if destino_arquivo == "Salvar localmente também":
-        local_path = os.path.join(os.getcwd(), nome_arquivo)
-        df.to_excel(local_path, index=False, engine="openpyxl")
-        st.info(f"📁 Arquivo também salvo localmente em: `{local_path}`")
+        if caminho_local and os.path.isdir(caminho_local):
+            local_path = os.path.join(caminho_local, nome_arquivo)
+            df.to_excel(local_path, index=False, engine="openpyxl")
+            st.info(f"📁 Arquivo salvo localmente em: `{local_path}`")
+        else:
+            st.warning("⚠️ Caminho inválido ou não encontrado. Verifique se o diretório existe.")
 
     st.success("✅ Processamento concluído!")
     st.download_button(
