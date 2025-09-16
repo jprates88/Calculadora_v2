@@ -19,6 +19,9 @@ caminho_local = ""
 if destino_arquivo == "Salvar localmente também":
     caminho_local = st.text_input("📂 Informe o caminho local onde deseja salvar o arquivo (ex: C:/Users/SeuUsuario/Documents)")
 
+# Campo para informar o valor do dólar PTAX
+ptax_valor = st.number_input("💱 Informe o valor do dólar PTAX de hoje (ex: 5.3858)", min_value=0.0, format="%.4f")
+
 uploaded_file = st.file_uploader("📁 Envie um arquivo .xlsx com colunas 'MeterId' e 'Quantity'", type="xlsx")
 
 @st.cache_data(show_spinner=False)
@@ -118,6 +121,10 @@ if uploaded_file:
 
     # Cálculo direto da coluna Preco_Final_USD
     df["Preco_Final_USD"] = df["Custo_Unitario_USD"] * df["Quantity"]
+
+    # Cálculo da coluna Preco_Final_BRL com base no PTAX
+    if ptax_valor > 0:
+        df["Preco_Final_BRL"] = df["Preco_Final_USD"] * ptax_valor
 
     buffer = BytesIO()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
