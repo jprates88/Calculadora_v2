@@ -35,7 +35,8 @@ def buscar_detalhes_por_meter_id(meter_id, regioes):
                         "unitPrice": float(item.get("unitPrice", 0.0)),
                         "skuName": item.get("skuName", ""),
                         "serviceName": item.get("serviceName", ""),
-                        "armRegionName": item.get("armRegionName", "")
+                        "armRegionName": item.get("armRegionName", ""),
+                        "currencyCode": item.get("currencyCode", "USD")
                     }
         except:
             pass
@@ -54,6 +55,7 @@ if uploaded_file:
     sku_names = []
     service_names = []
     azure_regions = []
+    currency_codes = []
 
     total = len(df)
     progresso = st.progress(0, text="Iniciando...")
@@ -75,6 +77,7 @@ if uploaded_file:
             sku_name = dados["skuName"]
             service_name = dados["serviceName"]
             regiao = dados["armRegionName"]
+            moeda = dados["currencyCode"]
 
             sku_name_lower = sku_name.lower()
 
@@ -95,11 +98,13 @@ if uploaded_file:
             sku_names.append(sku_name)
             service_names.append(service_name)
             azure_regions.append(regiao)
+            currency_codes.append(moeda)
         else:
             precos_unitarios.append(None)
             sku_names.append(None)
             service_names.append(None)
             azure_regions.append(None)
+            currency_codes.append(None)
 
         progresso.progress((i + 1) / total, text=f"Processando linha {i+1} de {total} ({int((i+1)/total*100)}%)")
         time.sleep(0.05)
@@ -109,6 +114,7 @@ if uploaded_file:
     df["SKU_Name"] = sku_names
     df["Service_Name"] = service_names
     df["Azure_Region"] = azure_regions
+    df["Currency"] = currency_codes
 
     # Cálculo direto da coluna Preco_Final_USD
     df["Preco_Final_USD"] = df["Custo_Unitario_USD"] * df["Quantity"]
