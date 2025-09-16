@@ -51,7 +51,6 @@ if uploaded_file:
     regioes_preferidas = ["brazilsouth", "eastus2", "Global", "Intercontinental", "Zone 1", "Zone 3"]
 
     precos_unitarios = []
-    precos_finais = []
     sku_names = []
     service_names = []
     azure_regions = []
@@ -92,16 +91,12 @@ if uploaded_file:
             elif "per 100 units" in sku_name_lower:
                 preco_unitario /= 100
 
-            preco_final = preco_unitario * quantidade
-
             precos_unitarios.append(round(preco_unitario, 6))
-            precos_finais.append(round(preco_final, 4))
             sku_names.append(sku_name)
             service_names.append(service_name)
             azure_regions.append(regiao)
         else:
             precos_unitarios.append(None)
-            precos_finais.append(None)
             sku_names.append(None)
             service_names.append(None)
             azure_regions.append(None)
@@ -109,11 +104,14 @@ if uploaded_file:
         progresso.progress((i + 1) / total, text=f"Processando linha {i+1} de {total} ({int((i+1)/total*100)}%)")
         time.sleep(0.05)
 
+    # Preenche colunas no DataFrame
     df["Custo_Unitario_USD"] = precos_unitarios
-    df["Preco_Final_USD"] = precos_finais
     df["SKU_Name"] = sku_names
     df["Service_Name"] = service_names
     df["Azure_Region"] = azure_regions
+
+    # Cálculo direto da coluna Preco_Final_USD
+    df["Preco_Final_USD"] = df["Custo_Unitario_USD"] * df["Quantity"]
 
     buffer = BytesIO()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
