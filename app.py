@@ -4,15 +4,18 @@ import requests
 import time
 from io import BytesIO
 from datetime import datetime
+import os
 
 st.set_page_config(page_title="Estimativa Azure", layout="centered")
 
 st.title("📊 Estimativa de Custos Azure via MeterId")
 st.write("Faça o upload da planilha com os MeterIds e quantidades para obter uma estimativa de custo usando a Azure Retail API.")
 
+# Opção de destino do arquivo
+destino_arquivo = st.radio("📍 Onde deseja gerar o arquivo de saída?", ["Somente para download", "Salvar localmente também"])
+
 uploaded_file = st.file_uploader("📁 Envie um arquivo .xlsx com colunas 'MeterId' e 'Quantity'", type="xlsx")
 
-# Função de busca na Azure API
 @st.cache_data(show_spinner=False)
 def buscar_detalhes_por_meter_id(meter_id, regioes):
     for regiao in regioes:
@@ -42,7 +45,6 @@ if uploaded_file:
 
     regioes_preferidas = ["brazilsouth", "eastus2", "Global", "Intercontinental", "Zone 1", "Zone 3"]
 
-    # Colunas para preencher
     precos_unitarios = []
     precos_finais = []
     sku_names = []
@@ -50,7 +52,6 @@ if uploaded_file:
     azure_regions = []
 
     total = len(df)
-
     progresso = st.progress(0, text="Iniciando...")
 
     meter_id_cache = {}
@@ -71,21 +72,20 @@ if uploaded_file:
             service_name = dados["serviceName"]
             regiao = dados["armRegionName"]
 
-            # Ajuste de preço unitário baseado na descrição do SKU
             sku_name_lower = sku_name.lower()
 
             if "100 tb" in sku_name_lower:
-                preco_unitario /= 102400  # Convertendo para preço por GB
+                preco_unitario /= 102400
             elif "1 tb" in sku_name_lower:
-                preco_unitario /= 1024  # Convertendo para preço por GB
+                preco_unitario /= 1024
             elif "per gb" in sku_name_lower or "1 gb" in sku_name_lower:
-                pass  # Já está por GB
+                pass
             elif "per 10k transactions" in sku_name_lower:
-                preco_unitario /= 10000  # Convertendo para preço por transação
+                preco_unitario /= 10000
             elif "per hour" in sku_name_lower:
-                pass  # Já está por hora
+                pass
             elif "per 100 units" in sku_name_lower:
-                preco_unitario /= 100  # Convertendo para preço por unidade
+                preco_unitario /= 100
 
             preco_final = preco_unitario * quantidade
 
@@ -102,7 +102,7 @@ if uploaded_file:
             azure_regions.append(None)
 
         progresso.progress((i + 1) / total, text=f"Processando linha {i+1} de {total} ({int((i+1)/total*100)}%)")
-        time.sleep(0.05)  # Reduzido para acelerar sem sobrecarregar a API
+        time.sleep(0.05)
 
     df["Custo_Unitario_USD"] = precos_unitarios
     df["Preco_Final_USD"] = precos_finais
@@ -110,12 +110,17 @@ if uploaded_file:
     df["Service_Name"] = service_names
     df["Azure_Region"] = azure_regions
 
-    # Gera arquivo de saída
     buffer = BytesIO()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     nome_arquivo = f"Estimativa_Azure_{timestamp}.xlsx"
     df.to_excel(buffer, index=False, engine="openpyxl")
     buffer.seek(0)
+
+    # Salvar localmente se selecionado
+    if destino_arquivo == "Salvar localmente também":
+        local_path = os.path.join(os.getcwd(), nome_arquivo)
+        df.to_excel(local_path, index=False, engine="openpyxl")
+        st.info(f"📁 Arquivo também salvo localmente em: `{local_path}`")
 
     st.success("✅ Processamento concluído!")
     st.download_button(
