@@ -22,6 +22,15 @@ if destino_arquivo == "Salvar localmente também":
 # Campo para informar o valor do dólar PTAX
 ptax_valor = st.number_input("💱 Informe o valor do dólar PTAX de hoje (ex: 5.3858)", min_value=0.0, format="%.4f")
 
+# Seleção de região preferida pelo usuário
+regiao_usuario = st.selectbox(
+    "🌍 Selecione a região preferida para consulta de preços",
+    ["brazilsouth", "eastus2", "Global", "Intercontinental", "Zone 1", "Zone 3"]
+)
+
+# Define a lista de regiões com prioridade para a escolhida pelo usuário
+regioes_preferidas = [regiao_usuario] + [r for r in ["brazilsouth", "eastus2", "Global", "Intercontinental", "Zone 1", "Zone 3"] if r != regiao_usuario]
+
 uploaded_file = st.file_uploader("📁 Envie um arquivo .xlsx com colunas 'MeterId' e 'Quantity'", type="xlsx")
 
 @st.cache_data(show_spinner=False)
@@ -51,8 +60,6 @@ if uploaded_file:
     if "MeterId" not in df.columns or "Quantity" not in df.columns:
         st.error("❌ A planilha deve conter as colunas 'MeterId' e 'Quantity'.")
         st.stop()
-
-    regioes_preferidas = ["brazilsouth", "eastus2", "Global", "Intercontinental", "Zone 1", "Zone 3"]
 
     precos_unitarios = []
     sku_names = []
